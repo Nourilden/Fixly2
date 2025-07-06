@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Code Assistant</title>
+<style>
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .left-panel {
+            width: 50%;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Subtle texture overlay */
+        .left-panel::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2"/></svg>');
+            background-size: 20px 20px;
+            opacity: 0.5;
+            z-index: 1;
+        }
+        
+        .ai-message {
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 80%;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease-out;
+        }
+        
+        .ai-message::before {
+            content: "AI";
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: #6e8efb;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .ai-message h2 {
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+        
+        .ai-message p {
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+        
+        .right-panel {
+            width: 50%;
+            background-color: #f5f5f5;
+            padding: 30px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .code-container {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            flex-grow: 1;
+            overflow: auto;
+        }
+        
+        .code-container .keyword {
+            color: #c678dd;
+        }
+        
+        .code-container .tag {
+            color: #e06c75;
+        }
+        
+        .code-container .attribute {
+            color: #d19a66;
+        }
+        
+        .code-container .value {
+            color: #98c379;
+        }
+        
+        .input-container {
+            margin-top: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            resize: none;
+            min-height: 100px;
+            box-sizing: border-box;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #6e8efb;
+            box-shadow: 0 0 0 2px rgba(110, 142, 251, 0.2);
+        }
+        
+        .bubbles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            top: 0;
+            left: 0;
+        }
+        
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: rise 10s infinite ease-in;
+        }
+        
+        .bubble:nth-child(1) {
+            width: 40px;
+            height: 40px;
+            left: 10%;
+            animation-duration: 8s;
+        }
+        
+        .bubble:nth-child(2) {
+            width: 20px;
+            height: 20px;
+            left: 20%;
+            animation-duration: 5s;
+            animation-delay: 1s;
+        }
+        
+        .bubble:nth-child(3) {
+            width: 50px;
+            height: 50px;
+            left: 35%;
+            animation-duration: 7s;
+            animation-delay: 2s;
+        }
+        
+        .bubble:nth-child(4) {
+            width: 30px;
+            height: 30px;
+            left: 50%;
+            animation-duration: 6s;
+            animation-delay: 0s;
+        }
+        
+        .bubble:nth-child(5) {
+            width: 25px;
+            height: 25px;
+            left: 65%;
+            animation-duration: 9s;
+            animation-delay: 1s;
+        }
+        
+        @keyframes rise {
+            0% {
+                bottom: -100px;
+                transform: translateX(0);
+            }
+            50% {
+                transform: translateX(100px);
+            }
+            100% {
+                bottom: 1080px;
+                transform: translateX(-200px);
+            }
+        }
+        
+        .typing-dots {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .typing-dots span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            margin: 0 3px;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+</style>
+</head>
+<body>
+  <div class="left-panel">
+    <div class="bubbles">
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+    </div>
+    
+    <div class="ai-message">
+      <h2>Hello! I'm your AI coding assistant</h2>
+      <p>Describe what you need in the input box on the right, and I'll generate the code for you.</p>
+      <div class="typing-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="right-panel">
+    <div class="code-container" id="code-output">
+      <span class="keyword">&lt;!DOCTYPE</span> <span class="attribute">html</span><span class="keyword">&gt;</span><br>
+      <span class="keyword">&lt;html</span> <span class="attribute">lang</span>=<span class="value">"en"</span><span class="keyword">&gt;</span><br>
+      <span class="keyword">&lt;head&gt;</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">&lt;meta</span> <span class="attribute">charset</span>=<span class="value">"UTF-8"</span><span class="keyword">&gt;</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">&lt;meta</span> <span class="attribute">name</span>=<span class="value">"viewport"</span> <span class="attribute">content</span>=<span class="value">"width=device-width, initial-scale=1.0"</span><span class="keyword">&gt;</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">&lt;title&gt;</span>My Website<span class="keyword">&lt;/title&gt;</span><br>
+      <span class="keyword">&lt;/head&gt;</span><br>
+      <span class="keyword">&lt;body&gt;</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">&lt;h1&gt;</span>Hello World<span class="keyword">&lt;/h1&gt;</span><br>
+      <span class="keyword">&lt;/body&gt;</span><br>
+      <span class="keyword">&lt;/html&gt;</span>
+    </div>
+
+    <div class="input-container">
+      <textarea id="user-input" placeholder="Describe what code you need..."></textarea>
+    </div>
+  </div>
+
+  <script>
+    const textarea = document.getElementById("user-input");
+const output = document.getElementById("code-output");
+
+// Replace these with your real values
+const API_KEY = "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";
+const SITE_URL = "https://yourdomain.com"; // optional
+const SITE_TITLE = "AI Code Assistant";     // optional
+
+textarea?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    const prompt = textarea.value.trim();
+    if (prompt) {
+      showLoading();
+      fetchOpenRouterResponse(prompt);
+    }
+  }
+});
+
+function showLoading() {
+  output.innerHTML = `
+    <div class="typing-dots">
+      <span></span><span></span><span></span>
+    </div>
+  `;
+}
+
+function fetchOpenRouterResponse(prompt) {
+  fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${API_KEY}`,
+      "HTTP-Referer": SITE_URL,
+      "X-Title": SITE_TITLE,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: "deepseek/deepseek-r1-0528:free",
+      messages: [
+        { role: "user", content: prompt }
+      ]
+    })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("API Error");
+    return res.json();
+  })
+  .then(data => {
+    const reply = data.choices?.[0]?.message?.content || "No response.";
+    // Save to localStorage
+    localStorage.setItem('generatedCode', `<pre style="white-space: pre-wrap; color: #98c379;">${escapeHTML(reply)}</pre>`);
+    output.innerHTML = `<pre style="white-space: pre-wrap; color: #98c379;">${escapeHTML(reply)}</pre>`;
+  })
+  .catch(err => {
+    output.innerHTML = `<pre style="color: red;">Error: ${err.message}</pre>`;
+  });
+}
+
+function escapeHTML(str) {
+  return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const codeOutput = document.getElementById('code-output');
+  const savedCode = localStorage.getItem('submittedCode') || localStorage.getItem('generatedCode');
+  if (savedCode && codeOutput) {
+    codeOutput.innerHTML = savedCode;
+  }
+});
+  </script>
+</body>
+</html>
